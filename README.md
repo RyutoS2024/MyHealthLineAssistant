@@ -16,6 +16,9 @@
 2. 体重データをChatGPT APIで読み込み、メッセージを生成する
 3. 生成したメッセージをLINEメッセージングAPIでLINEに通知させる
 
+![20240319_MyHealthLineAssistant](https://github.com/RyutoS2024/MyHealthLineAssistant/assets/87289018/8ac03872-5c44-4749-ad1f-0f919f38eb9d)
+
+
 ## 技術
 
 - Google Apps Script
