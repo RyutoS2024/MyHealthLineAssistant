@@ -11,34 +11,24 @@
  */
 function main() {
 
-  // 全てのトリガーを削除する
-  deleteExistingTriggers();
+  // 24時間後にトリガーを作成する
+  createMainTrigger();
 
-  // 2時間後のトリガーを作成する
-  createNextTrigger();
+  // 1ヶ月前の午前9:00の時間を取得する
+  var timeAtOneMonthAgo = getTimeAtOneMonthAgo();
 
-  // Withingsから取得する期間
-  var jstTime = getTime();
+  // 1ヶ月前の午前9:00の時間をUNIX時間に変換する
+  var unixTIme = convertJSTToUnixTime(timeAtOneMonthAgo);
 
-  // 日本時間からUNIX時間に変換する
-  var unxiTIme = convertJSTToUnixTime(jstTime);
+  // １ヶ月前から実行日当日までの体重データを取得する
+  var withingsObject = getJsonObjectFromWithings(unixTIme);
 
-  // Unix時間以降の体重データをWithingsからJsonデータとして取得する
-  var measureJson = getJsonFromWithings(unxiTIme);
+  // Withings APIから取得したデータを整形する
+  var formatWithingsObject = getformatWithingsJson(withingsObject);
 
-  // もし午前9時なら以下の処理を実行する
-  var now = new Date();
-  if (now.getHours() == 9) {
-    // 体重データと日付データ入ったオブジェクトリストを取得する
-    var weightAndDateObjectList = getWeightAndDateObjectList(measureJson);
+  // ChatGPTからメッセージを取得する
+  var message = getMessageFromChatGPT(JSON.stringify(formatWithingsObject));
 
-    // ChatGPTからメッセージを取得する
-    var message = getMessageFromChatGPT(weightAndDateObjectList);
-
-    // メッセージをLINEへ送る
-    sendLineMessage(message);
-  }
+  // メッセージをLINEへ送る
+  sendLineMessage(message);
 }
-
-
-

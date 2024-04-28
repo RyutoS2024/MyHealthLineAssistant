@@ -23,7 +23,7 @@ const DAYS = 30;
  * @param {}
  * @return {} 
  */
-function getTime() {
+function getTimeAtOneMonthAgo() {
   var now = new Date(); // 現在の日時を取得
   now.setDate(now.getDate() - DAYS); // 現在からdays日前の日付を設定
   now.setHours(9, 0, 0, 0); // 時間を9時0分0秒0ミリ秒に設定
@@ -37,7 +37,6 @@ function getTime() {
  * @return {}
  */
 function convertJSTToUnixTime(time) {
-  var time = getTime();
   // Unix時間（秒単位）に変換
   var unixTime = Math.floor(time.getTime() / 1000);
   
@@ -57,5 +56,3 @@ function convertUnixTimeToJST(unixTime) {
   var formattedDate = Utilities.formatDate(date, "JST", "yyyy/MM/dd E");
   return formattedDate;
 }
-
-

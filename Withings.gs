@@ -1,51 +1,21 @@
 /**
  * Withingsクラス
  */
-const REFRESH_TOKEN = "";
-const CLINET_ID = "";
-const CLIENT_SECRET = "";
+const CLINET_ID = "xxxxxxxxxxxxxx";
+const CLIENT_SECRET = "yyyyyyyyyyyyyy";
 
 /**
  * 体重計アプリWithingsから体重データを取得する
  * 
  * @param {} unixTime UNIX時間
- *   return:
-  {
-    "status": 0,
-    "body": {
-      "updatetime": 1710193133,
-      "timezone": "Asia/Tokyo",
-      "measuregrps": [
-        {
-          "grpid": 5272921517,
-          "attrib": 0,
-          "date": 1708136953,
-          "created": 1708136981,
-          "modified": 1708136981,
-          "category": 1,
-          "deviceid": "xxxxxxxxxxxxxxxxx",
-          "hash_deviceid": "xxxxxxxxxxxxxxxxx",
-          "measures": [
-            {
-              "value": 64800,
-              "type": 1,
-              "unit": -3,
-              "algo": 0,
-              "fm": 128
-            }
-          ],
-          "modelid": 13,
-          "model": "Body+",
-          "comment": null
-        }
-      ]
-    }
-  }
+ * @return
+ * {body={measuregrps=[{hash_deviceid=xxxxxxxxxxxxx, created=1.714263105E9, deviceid=xxxxxxxxx, measures=[{type=1.0, algo=3.0, fm=128.0, unit=-3.0, value=66400.0}, {type=8.0, algo=3.0, unit=-2.0, value=700.0, fm=128.0}, {value=5640.0, type=76.0, fm=128.0, algo=3.0, unit=-2.0}, {value=4180.0, unit=-2.0, type=77.0, fm=128.0, algo=3.0}, {algo=3.0, value=300.0, fm=128.0, unit=-2.0, type=88.0}, {value=10542.0, unit=-3.0, type=6.0}, {value=59400.0, type=5.0, unit=-3.0}], date=1.714263029E9, model=Body+, grpid=5.474599423E9, category=1.0, modified=1.714263105E9, modelid=13.0, comment=null, attrib=0.0}, {comment=null, model=Body+, modelid=13.0, created=1.714263106E9, deviceid=eda63b48cdc577f3a7966a751254a3cfca5377b3, measures=[{unit=-3.0, algo=3.0, value=66400.0, type=1.0, fm=128.0}, {fm=128.0, value=700.0, type=8.0, algo=3.0, unit=-2.0}, {value=5640.0, fm=128.0, type=76.0, unit=-2.0, algo=3.0}, {type=77.0, fm=128.0, unit=-2.0, value=4180.0, algo=3.0}, {type=88.0, value=300.0, algo=3.0, unit=-2.0, fm=128.0}, {type=6.0, value=10542.0, unit=-3.0}, {unit=-3.0, value=59400.0, type=5.0}], date=1.71426308E9, attrib=0.0, grpid=5.474599437E9, category=1.0, modified=1.714263106E9, hash_deviceid=eda63b48cdc577f3a7966a751254a3cfca5377b3}, {grpid=5.474599431E9, date=1.714263053E9, category=1.0, model=Body+, comment=null, hash_deviceid=eda63b48cdc577f3a7966a751254a3cfca5377b3, modelid=13.0, deviceid=eda63b48cdc577f3a7966a751254a3cfca5377b3, modified=1.714263106E9, measures=[{fm=128.0, unit=-3.0, algo=3.0, value=66400.0, type=1.0}, {unit=-2.0, value=700.0, algo=3.0, type=8.0, fm=128.0}, {algo=3.0, type=76.0, fm=128.0, unit=-2.0, value=5640.0}, {algo=3.0, unit=-2.0, type=77.0, fm=128.0, value=4180.0}, {algo=3.0, value=300.0, unit=-2.0, type=88.0, fm=128.0}, {unit=-3.0, type=6.0, value=10542.0}, {type=5.0, value=59400.0, unit=-3.0}], created=1.714263106E9, attrib=0.0}], timezone=Asia/Tokyo, updatetime=1.714263106E9}, status=0.0}
  */
-function getJsonFromWithings(unixTime) {
-  // アクセストークンを取得する
-  var accessToken = getNewAccessTokenFromWithigs();
-  var measType = 1; // 測定タイプ
+function getJsonObjectFromWithings(unixTime) {
+
+  // SpreadsheetからAccessTokenを取得する
+  var accessToken = getTokensArray()[0][0];
+  var measType = "1,5,6"; // 測定タイプ
   var lastUpdate = unixTime; // 最終更新時間
   var category = 1; // カテゴリー
   
@@ -69,110 +39,32 @@ function getJsonFromWithings(unixTime) {
   };
   
   var response = UrlFetchApp.fetch(url, options);
-  var jsonResponse = JSON.parse(response.getContentText());
+  var jsonObject = JSON.parse(response.getContentText());
 
-  // JSONオブジェクトを整形して文字列化
-  var formattedJson = JSON.stringify(jsonResponse, null, 2); // 第二引数にnullを、第三引数にスペースの数を指定
-  return formattedJson;
+  Logger.log(jsonObject)
+
+  return jsonObject;
 }
 
 /**
- * Withings JSONデータから体重と日付を取得する
- * 1つのオブジェクトにまとめて、リストに追加する
+ * Withings APIにアクセスしてAccess TokenとRefresh Tokenを更新する
+ * 2時間に1回実行しなければならない
  * 
- * @param {}
- * @return {}
- * return:
- * [
- *  {weight=64800.0, date=1.708136953E9},
- *  {weight=64800.0, date=1.708136996E9},
- *  {weight=66600.0, date=1.710193083E9}
- * ]
+ * @params
+ * @return
+ * 
  */
-function getWeightAndDateObjectList(measureJson) {
-  var jsonObject = JSON.parse(measureJson);
-
-  // 新しいリストを作成する
-  var list = []
-  // measuregrpsへのアクセス
-  var measuregrpList = jsonObject.body.measuregrps;
+function updateTokens() {
+  // SpreadsheetからRefreshTokenを取得する
+  var refreshToken = getTokensArray()[0][1];
   
-  // `measuregrps`配列内の各要素に対して処理を行う場合は、以下のようにループを使用できます。
-  for (var i = 0; i < measuregrpList.length; i++) {
-    var mgroups = measuregrpList[i];
-    // 新しいオブジェクトを作成する
-    var object = {};
-
-    // Unix時間からJSTに変換する
-    jstDate = convertUnixTimeToJST(mgroups.date);
-
-    // 日付データ
-    object['date'] = jstDate;
-
-    // 体重データ
-    var measure = mgroups.measures[0];
-    var calcedWeight = calcWeightValue(measure.value)
-
-    object['weight'] = calcedWeight;
-
-    // リストに追加する
-    list.push(object)
-  }
-
-  json = convertArrayToJsonString(list);
-  return json;
-}
-
-/**
- * 体重を計算する
- * 体重 / 1000 で計算する
- * 
- * @param (int) weight 体重（66600）
- * @return (int) result 計算結果
- */
-function calcWeightValue(weight) {
-  return result = weight / 1000
-}
-
-/**
- * 配列をJSON文字列に変換する
- * 
- * @param (list) list リスト []
- * @return (string) JSON文字列
- */
-function convertArrayToJsonString(list) {
-  // 配列をJSON形式の文字列に変換
-  var jsonString = JSON.stringify(list);  
-  return jsonString;
-}
-
-
-/**
- * リフレッシュトークンを元に新しいアクセストークンを取得する
-  return:
-  {
-    "status": 0,
-    "body": {
-      "userid": 36857528,
-      "access_token": "xxxxxxxxxxxxxxxxx",
-      "refresh_token": "xxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-      "scope": "user.info,user.metrics,user.activity",
-      "expires_in": 10800,
-      "token_type": "Bearer"
-    }
-  }
- */
-function getTokensFromWithings() {
-  var refreshToken = REFRESH_TOKEN;
-  var clientId = CLINET_ID;
-  var clientSecret = CLIENT_SECRET;
-  
+  // アクセスエンドポイント
   var url = 'https://wbsapi.withings.net/v2/oauth2';
   
   var payload = {
     "action": "requesttoken",
-    "client_id": clientId,
-    "client_secret": clientSecret,
+    "client_id": CLINET_ID,
+    "client_secret": CLIENT_SECRET,
     "grant_type": "refresh_token",
     "refresh_token": refreshToken
   };
@@ -183,72 +75,88 @@ function getTokensFromWithings() {
     "muteHttpExceptions": true // HTTP例外をミュートに設定。レスポンスコードに関わらず処理を続行
   };
   
+  // エンドポイントにアクセスするときにエラーがあれば、ログを表示する
   try {
+    // Withings APIからレスポンスを受け取る
     var response = UrlFetchApp.fetch(url, options);
+    // レスポンスをパースする
     var jsonResponse = JSON.parse(response.getContentText());
-    // JSONオブジェクトを整形して文字列化
-    var formattedJson = JSON.stringify(jsonResponse, null, 2); // 第二引数にnullを、第三引数にスペースの数を指定
-    Logger.log("トークン" + formattedJson)
-    return formattedJson;
+    Logger.log(jsonResponse)
+
+    // スプレッドシートにアクセストークンとリフレッシュトークンを登録する
+    setTokens(jsonResponse.body.access_token, jsonResponse.body.refresh_token)
   } catch (e) {
     Logger.log("Withings APIをリクエスト・整形中にエラーが発生しました。エラー: " + e.toString());
   }
 }
 
 /**
- * アクセストークンを保存する
+ * Withings JSONデータから体重と日付を取得する
+ * 1つのオブジェクトにまとめて、リストに追加する
  * 
- * @param {string} json トークン情報
- * param:
-    {
-      "status": 0,
-      "body": {
-        "userid": 36857528,
-        "access_token": "xxxxxxxxxxxxxxxxxxxxxxx",
-        "refresh_token": "xxxxxxxxxxxxxxxxxxxxxxxxxxx",
-        "scope": "user.info,user.metrics,user.activity",
-        "expires_in": 10800,
-        "token_type": "Bearer"
-      }
+ * @param withingsObject
+ * @return Object
+ * {data=[{日付=1.714263029E9, 除脂肪体重={value=59400.0, unit=-3.0, type=5.0}, 体脂肪率={unit=-3.0, value=10542.0, type=6.0}, 体重={type=1.0, algo=3.0, fm=128.0, value=66400.0, unit=-3.0}}, {除脂肪体重={unit=-3.0, type=5.0, value=59400.0}, 日付=1.71426308E9, 体脂肪率={unit=-3.0, type=6.0, value=10542.0}, 体重={unit=-3.0, algo=3.0, value=66400.0, fm=128.0, type=1.0}}, {体脂肪率={unit=-3.0, type=6.0, value=10542.0}, 日付=1.714263053E9, 除脂肪体重={type=5.0, unit=-3.0, value=59400.0}, 体重={algo=3.0, unit=-3.0, value=66400.0, fm=128.0, type=1.0}}]}
+ */
+function getformatWithingsJson(withingsObject) {
+
+  // 体重データが入る配列
+  var weightArray = [];
+
+  // 要素分だけループする
+  for (var i=0; i < withingsObject.body.measuregrps.length; i++) {
+
+    // 日付
+    var date = withingsObject.body.measuregrps[i].date;
+    // Unix時間を日本時間に変換する
+    var formatDate = convertUnixTimeToJST(date);
+
+    // 体重
+    // nullチェック
+    if (withingsObject.body.measuregrps[i].measures[0] == null) {
+      var formatWeight = null
+    } else {
+      var weight = withingsObject.body.measuregrps[i].measures[0].value;
+      var formatWeight = weight /1000;
     }
-    @return:
- */
-function saveAccessToken(json) {
-  // JSON文字列をオブジェクトに変換
-  var jsonObject = JSON.parse(json);
-  var accessToken = jsonObject.body.access_token;
-  // アクセストークンをスクリプトのプロパティとして保存
-  var scriptProperties = PropertiesService.getScriptProperties();
-  scriptProperties.setProperty('ACCESS_TOKEN', accessToken);
+
+    // 体脂肪率
+    // nullチェック
+    if (withingsObject.body.measuregrps[i].measures[5] == null) {
+      var formatFatRatio = null;
+    } else {
+      var fatRatio = withingsObject.body.measuregrps[i].measures[5].value;
+      var formatFatRatio = fatRatio / 1000;
+    }
+    
+    // 除脂肪体重
+    // nullチェック
+    if (withingsObject.body.measuregrps[i].measures[6] == null) {
+      var formatFatFreeMass = null;
+    } else {
+      var fatFreeMass = withingsObject.body.measuregrps[i].measures[6].value;
+      var formatFatFreeMass = fatFreeMass / 1000;
+    }
+
+    // 新しいオブジェクトを作成する
+    var weightResultObject = {
+      "日付": formatDate,
+      "体重(kg)": formatWeight,
+      "体脂肪率(%)": formatFatRatio,
+      "除脂肪体重(kg)": formatFatFreeMass
+    }
+
+    Logger.log(weightResultObject)
+
+    // 体重配列に計測結果を入れる
+    weightArray.push(weightResultObject)
+  }
+
+  //　オブジェクト化する
+    var withingsObject = {
+      "data": weightArray
+    }
+
+    Logger.log(withingsObject)
+    return withingsObject;
 }
-
-/**
- * アクセストークンを取得する
- * 
- * @param
- * @return {string} アクセストークン
- */
-function getAccessToken() {
-  // スクリプトのプロパティからアクセストークンを取得
-  var scriptProperties = PropertiesService.getScriptProperties();
-  var accessToken = scriptProperties.getProperty('ACCESS_TOKEN');
-  return accessToken;
-}
-
-/**
- * アクセストークンを更新する
- * 
- * @param
- * @return {string} 新しいアクセストークン
- */
-function getNewAccessTokenFromWithigs() {
-  // 新しいトークンを取得する
-  var tokenJson = getTokensFromWithings();
-  // アクセストークンをスクリプトプロパティに保存する
-  saveAccessToken(tokenJson);
-
-  // スクリプトプロパティからアクセストークンを取得する
-  var newAccessToken = getAccessToken();
-  return newAccessToken;
-}
-
